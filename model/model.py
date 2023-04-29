@@ -1,22 +1,60 @@
-import torch.nn as nn
-import torch.nn.functional as F
-from base import BaseModel
+import torch
+import transformers
+
+# Load the pre-trained DistilBERT tokenizer
+tokenizer = transformers.DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
 
 
-class MnistModel(BaseModel):
-    def __init__(self, num_classes=10):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, num_classes)
+# Define your model architecture
+class MyModel(torch.nn.Module):
+    def __init__(self):
+        super(MyModel, self).__init__()
+        self.distilbert = transformers.DistilBertModel.from_pretrained(
+            "distilbert-base-uncased"
+        )
+        self.fc = torch.nn.Linear(self.distilbert.config.hidden_size, 1)
 
-    def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+    def forward(self, input_ids, attention_mask):
+        # Use the DistilBERT model to generate embeddings
+        outputs = self.distilbert(input_ids=input_ids, attention_mask=attention_mask)
+        embeddings = outputs.last_hidden_state[:, 0, :]
+
+        # Apply a linear layer to get a single output value
+        output = self.fc(embeddings)
+        return output
+
+
+# Define your training loop
+def train(model, optimizer, loss_fn, dataloader):
+    for batch in dataloader:
+        # Get the input and target values for this batch
+        input_ids = batch["input_ids"]
+        attention_mask = batch["attention_mask"]
+        target = batch["target"]
+
+        # Compute the model's output
+        output = model(input_ids=input_ids, attention_mask=attention_mask)
+
+        # Compute the loss and update the model weights
+        loss = loss_fn(output, target)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+
+# Create a training dataset and dataloader
+# Here, you would need to define your own dataset class and provide it with the appropriate data and labels.
+dataset = MyDataset(...)
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+
+# Create an instance of your model and set it to training mode
+model = MyModel()
+model.train()
+
+# Define your optimizer and loss function
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+loss_fn = torch.nn.MSELoss()
+
+# Train the model for a few epochs
+for epoch in range(3):
+    train(model, optimizer, loss_fn, dataloader)
