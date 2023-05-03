@@ -13,15 +13,8 @@ import re
 import os
 
 
-model = GPT2LMHeadModel.from_pretrained("distilgpt2")
 device = torch.device("cuda")
 model = GPT2LMHeadModel.from_pretrained("distilgpt2").to(device)
-
-
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-tokenizer.bos_token = "<|startoftext|>"
-tokenizer.eos_token = "<|startoftext|>"
-tokenizer.pad_token = tokenizer.eos_token
 
 
 def tokenize_function(examples):
@@ -33,8 +26,7 @@ def tokenize_function(examples):
 csv_file = "data/processed/dev.csv"
 data = pd.read_csv(csv_file)
 data["formatted_text"] = (
-    f"{tokenizer.bos_token}"
-    + " Genre: "
+    f"{tokenizer.bos_token} Genre: "
     + data["tag"]
     + " Title: "
     + data["title"]
@@ -43,8 +35,8 @@ data["formatted_text"] = (
     + f" {tokenizer.eos_token}"
 )
 
+
 pattern = r"\[.*?\]"
-data["formatted_text"] = data["formatted_text"].apply(lambda x: re.sub(pattern, "", x))
 text_data = data["formatted_text"].tolist()
 # remove tags like [Chorus: ] etc
 
@@ -52,7 +44,10 @@ text_data = data["formatted_text"].tolist()
 def save_text_data(text_data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         for line in text_data:
-            f.write(f"{line}\n")
+            if isinstance(line, str):
+                line = re.sub(r"\[.*?\]", "", line)
+                print(line)
+                f.write(f"{line}\n")
 
 
 save_text_data(text_data, "data/processed/dev_lyrics_data.txt")
@@ -83,7 +78,7 @@ training_args = TrainingArguments(
     overwrite_output_dir=True,
     num_train_epochs=1,
     per_device_train_batch_size=4,
-    save_steps=100_000,
+    save_steps=10_000,
     device=device,
 )
 
