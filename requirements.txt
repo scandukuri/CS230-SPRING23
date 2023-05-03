@@ -1,5 +1,8 @@
-torch>=1.1
+torch==2.0
+transformers==4.28.1
 torchvision
-numpy
+numpy==1.24.3
 tqdm
 tensorboard>=1.14
+pandas==2.0.1
+datasets==2.12.0
