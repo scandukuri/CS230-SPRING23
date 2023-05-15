@@ -24,50 +24,6 @@ def tokenize_function(examples):
     return tokenizer(examples["text"], truncation=True, max_length=512)
 
 
-# Load and preprocess data
-# os.chdir("/Users/scandukuri/CS230-SPRING23/")
-csv_file = "data/processed/train.csv"
-data = pd.read_csv(csv_file)
-data["formatted_text"] = (
-    f"{tokenizer.bos_token} Genre: "
-    + data["tag"]
-    + " Title: "
-    + data["title"]
-    + " Lyrics: "
-    + data["lyrics"]
-    + f" {tokenizer.eos_token}"
-)
-
-
-pattern = r"\[.*?\]"
-text_data = data["formatted_text"].tolist()
-
-# remove tags like [Chorus: ] etc
-
-
-def save_text_data(text_data, filename):
-    with open(filename, "w", encoding="utf-8") as f:
-        for line in text_data:
-            if isinstance(line, str):
-                line = re.sub(r"\[.*?\]", "", line)
-                line = re.sub(r"\(.*?Chorus.*?\)", "", line)
-                line = re.sub(r"\(.*?Verse.*?\)", "", line)
-                line = re.sub(r"\(.*?Hook.*?\)", "", line)
-                line = re.sub(r"\(.*?Intro.*?\)", "", line)
-                line = re.sub(r"\(.*?Outro.*?\)", "", line)
-                line = re.sub(r"\(.*?Pre-.*?\)", "", line)
-                line = re.sub(r"\(.*?chorus.*?\)", "", line)
-                line = re.sub(r"\(.*?verse.*?\)", "", line)
-                line = re.sub(r"\(.*?hook.*?\)", "", line)
-                line = re.sub(r"\(.*?intro.*?\)", "", line)
-                line = re.sub(r"\(.*?outro.*?\)", "", line)
-                line = re.sub(r"\(.*?pre-.*?\)", "", line)
-                f.write(f"{line}\n")
-
-
-save_text_data(text_data, "data/processed/train_lyrics_data.txt")
-
-
 train_dataset = TextDataset(
     tokenizer=tokenizer,
     file_path="data/processed/train_lyrics_data.txt",
