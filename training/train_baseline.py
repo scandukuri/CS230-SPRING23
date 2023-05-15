@@ -43,6 +43,7 @@ training_args = TrainingArguments(
     num_train_epochs=1,
     per_device_train_batch_size=4,
     save_steps=10_000,
+    save_total_limit=2,
 )
 
 

@@ -50,7 +50,5 @@ with open("data/processed/train_lyrics_data.txt", "w", encoding="utf-8") as f:
                 line = re.sub(r"\(.*?outro.*?\)", "", line, flags=re.IGNORECASE)
                 line = re.sub(r"\(.*?pre.*?\)", "", line, flags=re.IGNORECASE)
                 line = re.sub(r"\(.*?bridge.*?\)", "", line, flags=re.IGNORECASE)
-                line = re.sub(r"\[.*?\]", " ", line)
-                line = re.sub(r"[^\w\s:]+", " ", line)
-                line = re.sub(r"\bx\s*\d+\b", "", line, flags=re.IGNORECASE)
+                line = re.sub(r"\(.*?fade.*?\)", "", line, flags=re.IGNORECASE)
                 f.write(f"{line}\n")
