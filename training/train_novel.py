@@ -45,7 +45,7 @@ class CustomModel(nn.Module):
         self.linear6 = nn.Linear(768, 50257)
 
     def forward(self, inputs):
-        x = self.gpt2(inputs)[0]  # Get the output logits tensor
+        x = self.gpt2(inputs)[0]
         x = nn.ReLU()(self.linear1(x))
         x = nn.ReLU()(self.linear2(x))
         x = nn.ReLU()(self.linear3(x))
@@ -55,7 +55,6 @@ class CustomModel(nn.Module):
         return x
 
 
-# Instantiate your custom model with GPT-2 as the base model
 custom_model = CustomModel(model).to(device)
 
 print("Model instantiated.")
@@ -90,10 +89,8 @@ def calculate_perplexity(text, n=2):
 
 
 def insert_newlines(text):
-    # Find all matches of two words without space between
     matches = re.findall(r"([a-z])([A-Z])", text)
 
-    # For each match, insert a newline between the two words
     for match in matches:
         text = text.replace("".join(match), match[0] + "\n" + match[1])
 
@@ -152,16 +149,13 @@ for index, row in train.iterrows():
     line = re.sub(r"\bx\s*\d+\b", "", line, flags=re.IGNORECASE)
     target_sequence = line
 
-    # Generate a sequence of tokens and log the probabilities
     input_ids = torch.tensor([tokenizer.encode(prompt)]).to(device)
     log_probs_sum = 0.0
 
-    for _ in range(100):  # Generate 10 tokens
+    for _ in range(100):
         # Get logits for the next token
         outputs = custom_model(input_ids)
         next_token_logits = outputs[:, -1, :]
-
-        # Apply softmax to logits
         probs = F.softmax(next_token_logits, dim=-1)
 
         # Sample a token
@@ -173,7 +167,6 @@ for index, row in train.iterrows():
 
         log_probs_next_token = torch.log(probs)
 
-        # Add the log probability of the selected token
         log_probs_sum += torch.log(probs[0, next_token.item()])
 
     # Decode the input sequence to text
@@ -183,25 +176,21 @@ for index, row in train.iterrows():
 
     processed_text = " ".join([word for word in output_text.split()])
     processed_text = insert_newlines(processed_text)
-    # Compute the reward
+    # Compute reward
     result = compute_reward(processed_text, target_sequence)
     if not result:
         continue
     reward, perplexity, ttr = result[0], result[1], result[2]
 
-    # Compute the loss: -1 * reward * sum(log_probabilities)
     loss = -reward * log_probs_sum
     metrics["index"].append(index)
     metrics["loss"].append(float(loss))
     metrics["perplexity"].append(perplexity)
     metrics["ttr"].append(ttr)
-    # Backpropagate the loss
+
     loss.backward()
 
-    # Update the weights
     optimizer.step()
-
-    # Zero the gradients
     optimizer.zero_grad()
 
     # Delete intermediate tensors to free up memory
